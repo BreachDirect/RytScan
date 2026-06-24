@@ -74,7 +74,7 @@ See [docs/WAVE6_ROADMAP.md](docs/WAVE6_ROADMAP.md) and [docs/prd.md](docs/prd.md
 1. Browse [Drips Stellar Wave issues](https://www.drips.network/wave/stellar/issues)
 2. Filter for security / Soroban / CI labels
 3. Apply via Drips during the active Wave window
-4. Open PRs against `ToryMic/RytScan`
+4. Open PRs against `BreachDirect/RytScan`
 
 ## License
 

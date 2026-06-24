@@ -6,8 +6,8 @@ resolver = "2"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-authors = ["ToryMic"]
-repository = "https://github.com/ToryMic/RytScan"
+authors = ["BreachDirect"]
+repository = "https://github.com/BreachDirect/RytScan"
 
 [workspace.dependencies]
 rytscan-core = { path = "crates/rytscan-core" }

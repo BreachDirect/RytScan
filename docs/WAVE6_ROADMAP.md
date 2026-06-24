@@ -2,7 +2,7 @@
 
 **Program:** [Stellar Wave 6](https://www.drips.network/wave/stellar)  
 **Window:** Jun 23 – Jun 30, 2026  
-**Repo:** [ToryMic/RytScan](https://github.com/ToryMic/RytScan)
+**Repo:** [BreachDirect/RytScan](https://github.com/BreachDirect/RytScan)
 
 ## Phase 1 ✅ Complete
 

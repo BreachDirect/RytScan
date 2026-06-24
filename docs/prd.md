@@ -12,7 +12,7 @@
 |---|---|
 | **Project** | RytScan |
 | **Tagline** | Soroban security scanner for Stellar smart contracts |
-| **Repository** | [ToryMic/RytScan](https://github.com/ToryMic/RytScan) |
+| **Repository** | [BreachDirect/RytScan](https://github.com/BreachDirect/RytScan) |
 | **Category** | Security tooling · Static analysis · Soroban |
 
 ## 2. Problem Statement
@@ -74,7 +74,7 @@ RytScan provides:
 
 - Replace line-based heuristics with `syn` AST traversal
 - SARIF v2.1.0 output for GitHub Code Scanning
-- GitHub Action: `ToryMic/rytscan-action`
+- GitHub Action: `BreachDirect/rytscan-action`
 - Rule suppressions via `rytscan.toml` config
 
 ### Phase 3: On-Chain Verification
