@@ -15,7 +15,9 @@ entry lists the severity, the vulnerability class, and remediation guidance.
 
 ---
 
-## ARITH-001 — Unchecked arithmetic (High)
+## ARITH-001
+
+**Unchecked arithmetic** · Severity: High
 
 **Vulnerability class:** CWE-190 Integer Overflow or Wraparound
 
@@ -32,7 +34,9 @@ let total = amount.checked_add(1).ok_or(ContractError::Overflow)?;
 
 ---
 
-## ASSERT-001 — Assertion macros (Medium)
+## ASSERT-001
+
+**Assertion macros** · Severity: Medium
 
 **Vulnerability class:** CWE-617 Reachable Assertion
 
@@ -50,7 +54,9 @@ if amount <= 0 {
 
 ---
 
-## AUTH-001 — Missing `require_auth` (High)
+## AUTH-001
+
+**Missing `require_auth`** · Severity: High
 
 **Vulnerability class:** CWE-862 Missing Authorization
 
@@ -67,7 +73,9 @@ admin.require_auth();
 
 ---
 
-## EVENT-001 — Missing Soroban events (Low)
+## EVENT-001
+
+**Missing Soroban events** · Severity: Low
 
 **Vulnerability class:** CWE-778 Insufficient Logging
 
@@ -83,7 +91,9 @@ env.events().publish((AdminOnly, "deposited"), (user, amount));
 
 ---
 
-## PANIC-001 — Panic-prone error handling (Medium)
+## PANIC-001
+
+**Panic-prone error handling** · Severity: Medium
 
 **Vulnerability class:** CWE-754 Improper Check for Unusual Conditions
 
@@ -94,7 +104,9 @@ transaction and make failure modes hard to distinguish from hostile input.
 
 ---
 
-## STORE-001 — Temporary storage for durable state (High)
+## STORE-001
+
+**Temporary storage for durable state** · Severity: High
 
 **Vulnerability class:** CWE-911 Improper Update of Reference Count
 
@@ -107,7 +119,9 @@ state.
 
 ---
 
-## TOKEN-001 — Unchecked token transfer (High)
+## TOKEN-001
+
+**Unchecked token transfer** · Severity: High
 
 **Vulnerability class:** CWE-252 Unchecked Return Value
 
@@ -123,7 +137,9 @@ token.transfer(&env, &to, &amount)?;
 
 ---
 
-## TTL-001 — Persistent write without TTL extension (Medium)
+## TTL-001
+
+**Persistent write without TTL extension** · Severity: Medium
 
 **Vulnerability class:** CWE-345 Improper Verification of Data Authenticity
 
@@ -139,7 +155,9 @@ env.storage().persistent().extend_ttl(&key, live_until, live_until);
 
 ---
 
-## UNSAFE-001 — `unsafe` blocks (High)
+## UNSAFE-001
+
+**`unsafe` blocks** · Severity: High
 
 **Vulnerability class:** CWE-119 Improper Restriction of Operations within the
 Bounds of a Memory Buffer

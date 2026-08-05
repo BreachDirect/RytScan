@@ -3,7 +3,7 @@
 **Soroban smart contract security scanner for the Stellar ecosystem.**
 
 ![CI](https://github.com/BreachDirect/RytScan/actions/workflows/ci.yml/badge.svg)
-![Rust](https://img.shields.io/badge/rust-1.95-orange)
+![Rust](https://img.shields.io/badge/rust-1.85+-orange)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Rules](https://img.shields.io/badge/rules-9-green)
 ![SARIF](https://img.shields.io/badge/SARIF-2.1.0-yellow)

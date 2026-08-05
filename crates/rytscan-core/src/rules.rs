@@ -428,25 +428,30 @@ struct FunctionBlock {
 
 fn extract_functions(source: &str) -> Vec<FunctionBlock> {
     let mut functions = Vec::new();
-    let mut current_name = None;
+    let mut current_name: Option<String> = None;
     let mut start_line = 0;
     let mut brace_depth: i32 = 0;
     let mut body_lines: Vec<String> = Vec::new();
     let mut in_function = false;
+    let mut seen_open_brace = false;
 
     for (idx, line) in source.lines().enumerate() {
         let line_no = idx + 1;
+        let opens = line.chars().filter(|c| *c == '{').count() as i32;
+        let closes = line.chars().filter(|c| *c == '}').count() as i32;
+        let net = opens - closes;
+
         if !in_function {
             if let Some(name) = parse_fn_name(line) {
                 current_name = Some(name);
                 start_line = line_no;
                 body_lines.clear();
-                brace_depth = line.chars().filter(|c| *c == '{').count() as i32
-                    - line.chars().filter(|c| *c == '}').count() as i32;
-                in_function = brace_depth > 0;
                 body_lines.push(line.to_string());
-                if brace_depth == 0 {
-                    in_function = false;
+                in_function = true;
+                seen_open_brace = opens > 0;
+                brace_depth = net;
+                if seen_open_brace && brace_depth <= 0 {
+                    // Body opened and closed on the signature line itself.
                     if let Some(name) = current_name.take() {
                         functions.push(FunctionBlock {
                             name,
@@ -454,15 +459,18 @@ fn extract_functions(source: &str) -> Vec<FunctionBlock> {
                             start_line,
                         });
                     }
+                    in_function = false;
                 }
             }
             continue;
         }
 
         body_lines.push(line.to_string());
-        brace_depth += line.chars().filter(|c| *c == '{').count() as i32;
-        brace_depth -= line.chars().filter(|c| *c == '}').count() as i32;
-        if brace_depth <= 0 {
+        if !seen_open_brace {
+            seen_open_brace = opens > 0;
+        }
+        brace_depth += net;
+        if seen_open_brace && brace_depth <= 0 {
             if let Some(name) = current_name.take() {
                 functions.push(FunctionBlock {
                     name,
@@ -537,6 +545,55 @@ pub fn withdraw(env: Env, user: Address, amount: i128) {
         let findings = AuthMissingRule.run(&ctx);
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].rule_id, "AUTH-001");
+    }
+
+    #[test]
+    fn auth_rule_handles_multiline_signatures() {
+        let source = r#"
+pub fn withdraw(
+    env: Env,
+    user: Address,
+    amount: i128,
+) {
+    env.storage().instance().set(&DataKey::Balance(user), &amount);
+}
+"#;
+        let lines: Vec<String> = source.lines().map(|l| l.to_string()).collect();
+        let ctx = RuleContext {
+            file: "lib.rs",
+            source,
+            lines: &lines,
+        };
+        let findings = AuthMissingRule.run(&ctx);
+        assert_eq!(findings.len(), 1, "multi-line fn body must be analyzed");
+        assert_eq!(findings[0].rule_id, "AUTH-001");
+        assert_eq!(findings[0].line, 2);
+    }
+
+    #[test]
+    fn event_rule_handles_multiline_signatures() {
+        let source = r#"
+pub fn deposit(
+    env: Env,
+    user: Address,
+    amount: i128,
+) {
+    env.storage().instance().set(&DataKey::Balance(user), &amount);
+}
+"#;
+        let lines: Vec<String> = source.lines().map(|l| l.to_string()).collect();
+        let ctx = RuleContext {
+            file: "lib.rs",
+            source,
+            lines: &lines,
+        };
+        let findings = MissingEventsRule.run(&ctx);
+        assert_eq!(
+            findings.len(),
+            1,
+            "multi-line fn must be checked for events"
+        );
+        assert_eq!(findings[0].rule_id, "EVENT-001");
     }
 
     #[test]

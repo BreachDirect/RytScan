@@ -90,6 +90,21 @@ fn main() -> Result<ExitCode> {
             let target = path
                 .canonicalize()
                 .with_context(|| format!("invalid scan path: {}", path.display()))?;
+            let known: Vec<&str> = rytscan_core::rules::all_rules()
+                .iter()
+                .map(|r| r.id())
+                .collect();
+            let unknown: Vec<&str> = rules
+                .iter()
+                .map(|s| s.as_str())
+                .filter(|id| !known.contains(id))
+                .collect();
+            if !unknown.is_empty() {
+                anyhow::bail!(
+                    "unknown rule id(s): {} — run `rytscan rules` to list available rules",
+                    unknown.join(", ")
+                );
+            }
             let scanner = Scanner::new(ScanOptions {
                 rule_ids: rules,
                 include_tests,
