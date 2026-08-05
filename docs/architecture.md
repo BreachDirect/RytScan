@@ -1,7 +1,7 @@
 # Architecture: RytScan
 
-**Version:** 1.0  
-**Last updated:** 2026-06-24
+**Version:** 1.1  
+**Last updated:** 2026-08-05
 
 ## 1. System Overview
 
@@ -12,7 +12,9 @@ graph LR
     CLI[rytscan-cli] --> CORE[rytscan-core]
     CORE --> RULES[Rule Engine]
     CORE --> SCAN[Directory Scanner]
-    RULES --> OUT[Report JSON/Text]
+    RULES --> OUT[Report Text/JSON]
+    CORE --> SARIF[SARIF 2.1.0 Serializer]
+    SARIF --> GCS[GitHub Code Scanning]
     SCAN --> FS[(.rs Soroban sources)]
 ```
 
@@ -20,7 +22,7 @@ graph LR
 
 | Crate | Role |
 |---|---|
-| `rytscan-core` | Rule trait, 6 detectors, report model, file walker |
+| `rytscan-core` | Rule trait, 9 detectors, report model, file walker, SARIF serializer |
 | `rytscan-cli` | Clap CLI, output formatting, exit codes |
 
 ## 3. Scan Pipeline
@@ -75,6 +77,11 @@ Phase 1 uses function-block extraction (brace counting) and line heuristics. Pha
 | EVENT-001 | Function analysis | Low | State change without `env.events()` |
 | TTL-001 | Function analysis | Medium | `.persistent().set` without `extend_ttl` |
 | STORE-001 | Line scan | High | `.temporary().set` with durable keys |
+| ARITH-001 | Line scan | High | `unchecked_add`/`unchecked_sub`/`unchecked_mul` (overflow risk) |
+| ASSERT-001 | Line scan | Medium | `assert!`/`assert_eq!` macros (abort on failure) |
+| UNSAFE-001 | Line scan | High | `unsafe { }` blocks (memory safety) |
+
+Full rule descriptions: [docs/rules.md](rules.md).
 
 ## 5. Report Model
 
@@ -85,13 +92,17 @@ Phase 1 uses function-block extraction (brace counting) and line heuristics. Pha
   "target": "fixtures/vulnerable-vault/src",
   "summary": {
     "files_scanned": 1,
-    "rules_run": 6,
-    "findings": 5,
-    "by_severity": { "high": 3, "medium": 1, "low": 1 }
+    "rules_run": 9,
+    "findings": 19,
+    "by_severity": { "high": 9, "medium": 3, "low": 6 }
   },
   "findings": [ ... ]
 }
 ```
+
+`--format sarif` produces a SARIF 2.1.0 log with one rule entry per detector
+(`helpUri` → [docs/rules.md](rules.md#rule-id)) and per-finding `level` mapped
+from severity (high → `error`, medium → `warning`, low → `note`).
 
 Exit codes:
 
@@ -117,9 +128,8 @@ Used by `cargo test` in `rytscan-core` and documented in README quick start.
 graph TB
     CLI --> CORE
     CORE --> SYN[syn AST Visitor]
-    CORE --> SARIF[SARIF Serializer]
     GHA[GitHub Action] --> CLI
-    SARIF --> GCS[GitHub Code Scanning]
+    CORE --> CONFIG[rytscan.toml suppressions]
 ```
 
 ## 8. Security & Limitations
@@ -133,7 +143,7 @@ graph TB
 
 | Phase | Drips contributor workflow |
 |---|---|
-| 1 ✅ | `rytscan scan .` before opening Wave PR |
+| 1/1.5 ✅ | `rytscan scan .` + `--format sarif` before opening Wave PR |
 | 2 | GitHub Action comment on PR with findings |
 | 3 | Testnet deploy checklist includes RytScan + invoke probe |
 | 4 | Match scan gaps to open Wave security issues |

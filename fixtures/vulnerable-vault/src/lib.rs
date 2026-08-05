@@ -71,3 +71,18 @@ pub fn risky_mint(env: Env, to: Address, amount: i128) {
     let value = amount.checked_add(1).unwrap();
     env.storage().instance().set(&DataKey::Balance(to), &value);
 }
+
+pub fn overflowing_add(env: Env, to: Address, amount: i128) {
+    let total = amount.unchecked_add(1);
+    env.storage().instance().set(&DataKey::Balance(to), &total);
+}
+
+pub fn assert_guard(env: Env, to: Address, amount: i128) {
+    assert!(amount > 0, "amount must be positive");
+    env.storage().instance().set(&DataKey::Balance(to), &amount);
+}
+
+pub fn unsafe_decode(env: Env, to: Address, bytes: &[u8]) {
+    unsafe { std::mem::transmute::<u8, i8>(bytes[0]) };
+    env.storage().instance().set(&DataKey::Balance(to), &bytes);
+}

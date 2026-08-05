@@ -1,8 +1,8 @@
 # Product Requirements Document (PRD): RytScan
 
-**Version:** 1.0  
-**Last updated:** 2026-06-24  
-**Wave program:** [Stellar Wave 6](https://www.drips.network/wave/stellar) — Jun 23–30, 2026
+**Version:** 1.1  
+**Last updated:** 2026-08-05  
+**Wave program:** [Stellar Wave 8](https://www.drips.network/wave/stellar) — August 2026
 
 ---
 
@@ -32,16 +32,18 @@ RytScan maps to recurring patterns in the [Stellar Wave issue catalog](https://w
 | CI security gates on contract PRs | `--fail-on high` + JSON reports |
 | Backend/indexer reliability | Events flagged early reduce silent state changes |
 
-**Wave 6 goal:** Ship Phase 1 CLI so contributors can scan contracts on day one of the sprint.
+**Wave 8 goal:** Ship Phase 1.5 CLI — 9 detectors, SARIF output for Code
+Scanning, and CI enforcement — so Wave contributors can gate contract PRs
+on day one of the sprint.
 
 ## 4. Solution
 
 RytScan provides:
 
 1. **`rytscan scan <path>`** — walk Soroban Rust sources and run security rules
-2. **Rule catalog** — 6 Phase 1 detectors aligned with [stellar-dev-skill](https://github.com/stellar/stellar-dev-skill) vulnerability classes
+2. **Rule catalog** — 9 Phase 1/1.5 detectors aligned with [stellar-dev-skill](https://github.com/stellar/stellar-dev-skill) vulnerability classes
 3. **Fixture contracts** — vulnerable + clean samples for regression tests
-4. **CI-ready output** — text + JSON, configurable failure threshold
+4. **CI-ready output** — text, JSON, and SARIF v2.1.0 (GitHub Code Scanning), with a configurable failure threshold
 
 ## 5. Target Users
 
@@ -70,10 +72,27 @@ RytScan provides:
 - [x] `rytscan rules` lists all rule IDs
 - [x] Documented Wave 6 alignment
 
+### Phase 1.5: Rule Expansion & CI Integration ✅
+
+| Deliverable | Status |
+|---|---|
+| ARITH-001, ASSERT-001, UNSAFE-001 rules (9 total) | ✅ |
+| SARIF v2.1.0 output (`--format sarif`) | ✅ |
+| CI workflow (fmt, clippy, tests, fixture smoke) | ✅ |
+| GitHub Action: `BreachDirect/rytscan-action` | Planned |
+
+**Success criteria (Phase 1.5):**
+
+- [x] `cargo clippy --workspace --all-targets -- -D warnings` passes
+- [x] `cargo test --workspace` passes (10 tests)
+- [x] Vulnerable fixture triggers all 9 rules
+- [x] Clean fixture triggers 0 findings
+- [x] SARIF output validates against the 2.1.0 shape
+- [x] CI gates PRs on fmt + clippy + tests + smoke
+
 ### Phase 2: AST Analysis & CI Integration
 
 - Replace line-based heuristics with `syn` AST traversal
-- SARIF v2.1.0 output for GitHub Code Scanning
 - GitHub Action: `BreachDirect/rytscan-action`
 - Rule suppressions via `rytscan.toml` config
 
@@ -100,7 +119,7 @@ RytScan provides:
 
 | Metric | Phase 1 | Phase 4 |
 |---|---|---|
-| Built-in rules | 6 | 20+ |
+| Built-in rules | 9 | 20+ |
 | False positive rate (fixtures) | ≤ 1 per clean fixture | ≤ 5% |
 | Scan time (1 contract) | < 100ms | < 50ms |
 | Wave repos adopting CI gate | 0 | 10+ |

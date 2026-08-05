@@ -3,12 +3,15 @@ use std::process::ExitCode;
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
-use rytscan_core::{Report, Scanner, ScanOptions, Severity};
+use rytscan_core::{to_sarif, Report, ScanOptions, Scanner, Severity};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Parser)]
-#[command(name = "rytscan", about = "Soroban smart contract security scanner for Stellar")]
+#[command(
+    name = "rytscan",
+    about = "Soroban smart contract security scanner for Stellar"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -46,6 +49,7 @@ enum Commands {
 enum OutputFormat {
     Text,
     Json,
+    Sarif,
 }
 
 #[derive(Clone, Copy, ValueEnum, PartialEq, Eq, PartialOrd, Ord)]
@@ -83,7 +87,9 @@ fn main() -> Result<ExitCode> {
             include_tests,
             fail_on,
         } => {
-            let target = path.canonicalize().with_context(|| format!("invalid scan path: {}", path.display()))?;
+            let target = path
+                .canonicalize()
+                .with_context(|| format!("invalid scan path: {}", path.display()))?;
             let scanner = Scanner::new(ScanOptions {
                 rule_ids: rules,
                 include_tests,
@@ -109,7 +115,16 @@ fn print_rules() {
 fn render_report(report: &Report, format: OutputFormat) {
     match format {
         OutputFormat::Json => {
-            println!("{}", serde_json::to_string_pretty(report).expect("serialize report"));
+            println!(
+                "{}",
+                serde_json::to_string_pretty(report).expect("serialize report")
+            );
+        }
+        OutputFormat::Sarif => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&to_sarif(report)).expect("serialize sarif")
+            );
         }
         OutputFormat::Text => render_text(report),
     }
@@ -161,5 +176,40 @@ mod tests {
     fn text_renderer_handles_empty_report() {
         let report = Report::new("fixtures", VERSION);
         render_text(&report);
+    }
+
+    #[test]
+    fn sarif_renderer_emits_valid_json() {
+        let mut report = Report::new("fixtures", VERSION);
+        report.findings.push(rytscan_core::Finding {
+            rule_id: "UNSAFE-001".into(),
+            title: "unsafe block in contract code".into(),
+            severity: Severity::High,
+            message: "Contract code contains an unsafe block".into(),
+            file: "contracts/x/src/lib.rs".into(),
+            line: 7,
+            snippet: "unsafe { ... }".into(),
+            recommendation: "Eliminate unsafe blocks.".into(),
+        });
+        report.finalize(1, 9);
+        let out = format!("{:#}", serde_json::to_value(to_sarif(&report)).unwrap());
+        assert!(out.contains("\"version\": \"2.1.0\""));
+        assert!(out.contains("\"ruleId\": \"UNSAFE-001\""));
+    }
+
+    #[test]
+    fn scan_clean_fixture_produces_no_high_findings() {
+        let fixture =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/clean-token/src");
+        let target = fixture.canonicalize().unwrap();
+        let scanner = Scanner::new(ScanOptions {
+            rule_ids: vec![],
+            include_tests: false,
+        });
+        let report = scanner.scan_path(&target, VERSION);
+        assert_eq!(
+            report.summary.findings, 0,
+            "clean fixture must not trigger rules"
+        );
     }
 }

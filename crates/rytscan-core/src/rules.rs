@@ -20,6 +20,9 @@ pub fn all_rules() -> Vec<Box<dyn Rule + Send + Sync>> {
         Box::new(UncheckedTransferRule),
         Box::new(TtlExtensionRule),
         Box::new(UnsafeTemporaryStorageRule),
+        Box::new(UncheckedArithmeticRule),
+        Box::new(AssertUsageRule),
+        Box::new(UnsafeBlockRule),
     ]
 }
 
@@ -91,7 +94,11 @@ impl Rule for PanicUsageRule {
     }
 
     fn run(&self, ctx: &RuleContext<'_>) -> Vec<Finding> {
-        let patterns = [(".unwrap()", "unwrap()"), (".expect(", "expect()"), ("panic!(", "panic!()")];
+        let patterns = [
+            (".unwrap()", "unwrap()"),
+            (".expect(", "expect()"),
+            ("panic!(", "panic!()"),
+        ];
         let mut findings = Vec::new();
 
         for (line_no, line) in ctx.lines.iter().enumerate() {
@@ -138,7 +145,9 @@ impl Rule for MissingEventsRule {
             if !is_state_changing(&function.body) {
                 continue;
             }
-            if function.body.contains("env.events()") || function.body.contains("env.events().publish") {
+            if function.body.contains("env.events()")
+                || function.body.contains("env.events().publish")
+            {
                 continue;
             }
             if function.name.starts_with("initialize") || function.name.starts_with("__") {
@@ -255,7 +264,14 @@ impl Rule for UnsafeTemporaryStorageRule {
 
     fn run(&self, ctx: &RuleContext<'_>) -> Vec<Finding> {
         let mut findings = Vec::new();
-        let durable_keys = ["Admin", "Owner", "Balance", "TotalSupply", "Vault", "Shares"];
+        let durable_keys = [
+            "Admin",
+            "Owner",
+            "Balance",
+            "TotalSupply",
+            "Vault",
+            "Shares",
+        ];
         for (line_no, line) in ctx.lines.iter().enumerate() {
             if !line.contains(".temporary().set(") {
                 continue;
@@ -270,6 +286,133 @@ impl Rule for UnsafeTemporaryStorageRule {
                     line: line_no + 1,
                     snippet: line.trim().to_string(),
                     recommendation: "Use instance or persistent storage for admin balances and vault totals; temporary storage is ledger-scoped.".into(),
+                });
+            }
+        }
+        findings
+    }
+}
+
+struct UncheckedArithmeticRule;
+
+impl Rule for UncheckedArithmeticRule {
+    fn id(&self) -> &'static str {
+        "ARITH-001"
+    }
+
+    fn title(&self) -> &'static str {
+        "Unchecked arithmetic that can overflow"
+    }
+
+    fn run(&self, ctx: &RuleContext<'_>) -> Vec<Finding> {
+        let ops = [
+            "unchecked_add",
+            "unchecked_sub",
+            "unchecked_mul",
+            "unchecked_div",
+            "unchecked_rem",
+            "unchecked_neg",
+            "unchecked_shl",
+            "unchecked_shr",
+        ];
+        let mut findings = Vec::new();
+        for (line_no, line) in ctx.lines.iter().enumerate() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("//") {
+                continue;
+            }
+            for op in ops {
+                if line.contains(op) {
+                    findings.push(Finding {
+                        rule_id: self.id().into(),
+                        title: self.title().into(),
+                        severity: Severity::High,
+                        message: format!("Uses `{op}`, which silently wraps on overflow"),
+                        file: ctx.file.to_string(),
+                        line: line_no + 1,
+                        snippet: trimmed.to_string(),
+                        recommendation: "Use checked_add/checked_sub/checked_mul/checked_div and map None to a typed contract error.".into(),
+                    });
+                    break;
+                }
+            }
+        }
+        findings
+    }
+}
+
+struct AssertUsageRule;
+
+impl Rule for AssertUsageRule {
+    fn id(&self) -> &'static str {
+        "ASSERT-001"
+    }
+
+    fn title(&self) -> &'static str {
+        "Assertion macro aborts the transaction on failure"
+    }
+
+    fn run(&self, ctx: &RuleContext<'_>) -> Vec<Finding> {
+        let patterns = [
+            ("assert!(", "assert!()"),
+            ("assert_eq!(", "assert_eq!()"),
+            ("assert_ne!(", "assert_ne!()"),
+            ("debug_assert!", "debug_assert!()"),
+        ];
+        let mut findings = Vec::new();
+        for (line_no, line) in ctx.lines.iter().enumerate() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("//") {
+                continue;
+            }
+            for (pattern, label) in patterns {
+                if line.contains(pattern) {
+                    findings.push(Finding {
+                        rule_id: self.id().into(),
+                        title: self.title().into(),
+                        severity: Severity::Medium,
+                        message: format!("Uses {label} which panics and aborts the entire transaction"),
+                        file: ctx.file.to_string(),
+                        line: line_no + 1,
+                        snippet: trimmed.to_string(),
+                        recommendation: "Validate invariants explicitly and return a typed contract error instead of asserting.".into(),
+                    });
+                    break;
+                }
+            }
+        }
+        findings
+    }
+}
+
+struct UnsafeBlockRule;
+
+impl Rule for UnsafeBlockRule {
+    fn id(&self) -> &'static str {
+        "UNSAFE-001"
+    }
+
+    fn title(&self) -> &'static str {
+        "unsafe block in contract code"
+    }
+
+    fn run(&self, ctx: &RuleContext<'_>) -> Vec<Finding> {
+        let mut findings = Vec::new();
+        for (line_no, line) in ctx.lines.iter().enumerate() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("//") {
+                continue;
+            }
+            if line.contains("unsafe {") || line.contains("unsafe{") || line.contains("unsafe fn") {
+                findings.push(Finding {
+                    rule_id: self.id().into(),
+                    title: self.title().into(),
+                    severity: Severity::High,
+                    message: "Contract code contains an unsafe block; undefined behavior can brick the contract".into(),
+                    file: ctx.file.to_string(),
+                    line: line_no + 1,
+                    snippet: trimmed.to_string(),
+                    recommendation: "Eliminate unsafe blocks from on-chain code or isolate them behind a reviewed, documented safety boundary.".into(),
                 });
             }
         }
@@ -394,5 +537,64 @@ pub fn withdraw(env: Env, user: Address, amount: i128) {
         let findings = AuthMissingRule.run(&ctx);
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].rule_id, "AUTH-001");
+    }
+
+    #[test]
+    fn arith_rule_flags_unchecked_arithmetic() {
+        let source = r#"
+pub fn mint(env: Env, amount: i128) {
+    let total = env.total_supply().unchecked_add(amount);
+    env.storage().instance().set(&DataKey::Total, &total);
+}
+"#;
+        let lines: Vec<String> = source.lines().map(|l| l.to_string()).collect();
+        let ctx = RuleContext {
+            file: "lib.rs",
+            source,
+            lines: &lines,
+        };
+        let findings = UncheckedArithmeticRule.run(&ctx);
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].rule_id, "ARITH-001");
+        assert_eq!(findings[0].severity, Severity::High);
+    }
+
+    #[test]
+    fn assert_rule_flags_assertion_macros() {
+        let source = r#"
+pub fn transfer(env: Env, amount: i128) {
+    assert!(amount > 0, "amount must be positive");
+    env.storage().instance().set(&DataKey::Balance, &amount);
+}
+"#;
+        let lines: Vec<String> = source.lines().map(|l| l.to_string()).collect();
+        let ctx = RuleContext {
+            file: "lib.rs",
+            source,
+            lines: &lines,
+        };
+        let findings = AssertUsageRule.run(&ctx);
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].rule_id, "ASSERT-001");
+    }
+
+    #[test]
+    fn unsafe_rule_flags_unsafe_blocks() {
+        let source = r#"
+pub fn decode(env: Env, bytes: &[u8]) {
+    unsafe { std::mem::transmute::<u32, i32>(0) };
+    env.storage().instance().set(&DataKey::Balance, &bytes);
+}
+"#;
+        let lines: Vec<String> = source.lines().map(|l| l.to_string()).collect();
+        let ctx = RuleContext {
+            file: "lib.rs",
+            source,
+            lines: &lines,
+        };
+        let findings = UnsafeBlockRule.run(&ctx);
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].rule_id, "UNSAFE-001");
+        assert_eq!(findings[0].severity, Severity::High);
     }
 }

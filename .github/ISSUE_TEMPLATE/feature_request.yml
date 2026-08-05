@@ -1,0 +1,42 @@
+name: Feature request
+description: Suggest a new rule, feature, or improvement for RytScan
+title: "[feature]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to share an idea.
+  - type: dropdown
+    id: type
+    attributes:
+      label: Request type
+      options:
+        - New security rule
+        - CLI / output improvement
+        - CI / integration improvement
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What are you trying to solve? Focus on the problem, not the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed approach
+      description: How should RytScan address it? Link related issues, CWE classes, or docs.
+  - type: checkboxes
+    id: roadmap
+    attributes:
+      label: Already on the roadmap?
+      description: Please check [docs/ROADMAP.md](docs/ROADMAP.md) first.
+      options:
+        - label: I checked the roadmap and this is not already planned
+    validations:
+      required: true

@@ -28,14 +28,14 @@ impl Scanner {
         let file_count = files.len();
 
         for file in &files {
-            let source = match std::fs::read_to_string(&file) {
+            let source = match std::fs::read_to_string(file) {
                 Ok(content) => content,
                 Err(_) => continue,
             };
             let lines: Vec<String> = source.lines().map(|line| line.to_string()).collect();
             let rel = file
                 .strip_prefix(target)
-                .unwrap_or(&file)
+                .unwrap_or(file)
                 .to_string_lossy()
                 .to_string();
             let ctx = RuleContext {
@@ -52,7 +52,7 @@ impl Scanner {
         report.finalize(file_count, rule_count);
         report
             .findings
-            .sort_by(|a, b| (a.file.clone(), a.line, a.rule_id.clone()).cmp(&(b.file.clone(), b.line, b.rule_id.clone())));
+            .sort_by_key(|a| (a.file.clone(), a.line, a.rule_id.clone()));
         report
     }
 }
@@ -94,8 +94,8 @@ mod tests {
 
     #[test]
     fn scans_fixture_directory() {
-        let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../fixtures/vulnerable-vault/src");
+        let fixture =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/vulnerable-vault/src");
         let scanner = Scanner::new(ScanOptions::default());
         let report = scanner.scan_path(&fixture, "0.1.0-test");
         assert!(report.summary.findings > 0);
