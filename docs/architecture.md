@@ -94,7 +94,7 @@ Full rule descriptions: [docs/rules.md](rules.md).
     "files_scanned": 1,
     "rules_run": 9,
     "findings": 19,
-    "by_severity": { "high": 9, "medium": 3, "low": 6 }
+    "by_severity": { "high": 10, "medium": 3, "low": 6 }
   },
   "findings": [ ... ]
 }

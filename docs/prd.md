@@ -70,7 +70,7 @@ RytScan provides:
 - [x] Scanning `fixtures/vulnerable-vault` produces ≥ 4 findings
 - [x] Scanning `fixtures/clean-token` produces 0 high/critical findings
 - [x] `rytscan rules` lists all rule IDs
-- [x] Documented Wave 6 alignment
+- [x] Documented Wave 8 alignment
 
 ### Phase 1.5: Rule Expansion & CI Integration ✅
 
