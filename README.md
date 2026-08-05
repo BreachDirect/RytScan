@@ -95,6 +95,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/prd.md](docs/prd.md).
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
+cargo audit            # dependency vulnerability scan
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contributor guide and
