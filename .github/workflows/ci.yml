@@ -89,4 +89,3 @@ jobs:
         with:
           sarif_file: rytscan.sarif
           category: rytscan
-          fail_ci_if_error: false
