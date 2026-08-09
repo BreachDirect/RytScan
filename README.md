@@ -3,7 +3,7 @@
 **Soroban smart contract security scanner for the Stellar ecosystem.**
 
 ![CI](https://github.com/BreachDirect/RytScan/actions/workflows/ci.yml/badge.svg)
-![Rust](https://img.shields.io/badge/rust-1.85+-orange)
+![Rust](https://img.shields.io/badge/rust-1.95+-orange)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Rules](https://img.shields.io/badge/rules-9-green)
 ![SARIF](https://img.shields.io/badge/SARIF-2.1.0-yellow)
@@ -40,10 +40,27 @@ cargo run -p rytscan-cli -- scan ./my-contract --format sarif > rytscan.sarif
 
 # List rules
 cargo run -p rytscan-cli -- rules
+
+# Show version
+cargo run -p rytscan-cli -- --version
 ```
 
 Exit codes: `0` = no findings at/above threshold, `1` = findings found,
 `2` = invalid path or runtime error.
+
+## Scan options
+
+| Flag | Default | Description |
+|---|---|---|
+| `scan <path>` | — | Contract file or directory to analyze |
+| `--format <text\|json\|sarif>` | `text` | Output format; `sarif` is SARIF v2.1.0 |
+| `--rule <ID>` | all rules | Restrict to specific rule IDs (repeatable, e.g. `--rule AUTH-001`) |
+| `--include-tests` | off | Also scan Rust files under `tests/`/`test` dirs |
+| `--fail-on <severity>` | `high` | Exit `1` when a finding is at/above this severity (`info`\|`low`\|`medium`\|`high`\|`critical`) |
+| `--version` | — | Print the RytScan version |
+| `rules` | — | List built-in rule IDs and titles |
+
+Unknown rule IDs are rejected with a pointer to `rytscan rules`.
 
 ## Built-in Rules (Phase 1.5)
 
@@ -74,7 +91,7 @@ RytScan/
 │   ├── architecture.md
 │   ├── rules.md
 │   └── ROADMAP.md
-└── .github/workflows/    # CI (fmt, clippy, tests, smoke)
+└── .github/workflows/    # CI (fmt, clippy, audit, tests, smoke)
 ```
 
 ## Roadmap

@@ -84,7 +84,7 @@ RytScan provides:
 **Success criteria (Phase 1.5):**
 
 - [x] `cargo clippy --workspace --all-targets -- -D warnings` passes
-- [x] `cargo test --workspace` passes (10 tests)
+- [x] `cargo test --workspace` passes (12 tests)
 - [x] Vulnerable fixture triggers all 9 rules
 - [x] Clean fixture triggers 0 findings
 - [x] SARIF output validates against the 2.1.0 shape

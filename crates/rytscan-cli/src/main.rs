@@ -10,7 +10,8 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 #[derive(Parser)]
 #[command(
     name = "rytscan",
-    about = "Soroban smart contract security scanner for Stellar"
+    about = "Soroban smart contract security scanner for Stellar",
+    version = VERSION
 )]
 struct Cli {
     #[command(subcommand)]
@@ -110,7 +111,7 @@ fn main() -> Result<ExitCode> {
                 include_tests,
             });
             let report = scanner.scan_path(&target, VERSION);
-            render_report(&report, format);
+            render_report(&report, format)?;
             if should_fail(&report, fail_on.into()) {
                 Ok(ExitCode::from(1))
             } else {
@@ -127,22 +128,17 @@ fn print_rules() {
     }
 }
 
-fn render_report(report: &Report, format: OutputFormat) {
+fn render_report(report: &Report, format: OutputFormat) -> Result<()> {
     match format {
         OutputFormat::Json => {
-            println!(
-                "{}",
-                serde_json::to_string_pretty(report).expect("serialize report")
-            );
+            println!("{}", serde_json::to_string_pretty(report)?);
         }
         OutputFormat::Sarif => {
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&to_sarif(report)).expect("serialize sarif")
-            );
+            println!("{}", serde_json::to_string_pretty(&to_sarif(report))?);
         }
         OutputFormat::Text => render_text(report),
     }
+    Ok(())
 }
 
 fn render_text(report: &Report) {
