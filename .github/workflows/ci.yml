@@ -83,7 +83,7 @@ jobs:
           ./target/debug/rytscan scan fixtures/vulnerable-vault/src --format sarif \
             | python3 -c "import json,sys; d=json.load(sys.stdin); assert d['version']=='2.1.0'; print('SARIF OK,', len(d['runs'][0]['results']), 'results')"
       - name: Generate SARIF for Code Scanning
-        run: ./target/debug/rytscan scan fixtures/vulnerable-vault/src --format sarif > rytscan.sarif
+        run: ./target/debug/rytscan scan fixtures/vulnerable-vault/src --format sarif --fail-on critical > rytscan.sarif
       - name: Upload SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
