@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & publish tagged release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build release binary
+        run: cargo build --release --locked
+
+      - name: Package binary + checksums
+        run: |
+          cp target/release/rytscan rytscan-x86_64-unknown-linux-gnu
+          sha256sum rytscan-x86_64-unknown-linux-gnu > SHA256SUMS
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            rytscan-x86_64-unknown-linux-gnu
+            SHA256SUMS
+          generate_release_notes: true
