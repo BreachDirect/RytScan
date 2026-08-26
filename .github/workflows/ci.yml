@@ -85,7 +85,7 @@ jobs:
       - name: Generate SARIF for Code Scanning
         run: ./target/debug/rytscan scan fixtures/vulnerable-vault/src --format sarif --fail-on critical > rytscan.sarif
       - name: Upload SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: rytscan.sarif
           category: rytscan
